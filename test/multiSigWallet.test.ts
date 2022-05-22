@@ -62,4 +62,15 @@ describe("Testing Multi Sig Wallets", function () {
       ])
     ).to.be.revertedWith("owner present");
   });
+
+  it("Testing submission of transaction", async function () {
+    const { multiSigWallet, msWallet, alice } = await loadFixture(fixture);
+    const [_to] = await ethers.getSigners();
+    const _mockData = "0x61626364";
+    await expect(
+      multiSigWallet.connect(alice).submitTransaction(_to.address, 1, _mockData)
+    )
+      .to.emit(multiSigWallet, "SubmitTransaction")
+      .withArgs(alice.address, 0, _to.address, 1, _mockData);
+  });
 });
