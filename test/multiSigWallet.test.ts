@@ -14,9 +14,7 @@ import { Wallet } from "ethers";
 chai.use(solidity);
 
 describe("Testing Multi Sig Wallets", function () {
-  const provider = new MockProvider();
-  const [msWallet, alice, bob, charlie, dana, erika, fawn] =
-    provider.getWallets();
+  // Create fixture to prevent multiple deployments
   async function fixture(
     [msWallet, alice, bob, charlie, dana, erika, fawn]: Wallet[],
     provider: MockProvider
@@ -55,6 +53,7 @@ describe("Testing Multi Sig Wallets", function () {
         8,
       ])
     ).to.be.revertedWith("num confirmations reqd invalid");
+
     await expect(
       deployContract(msWallet, MultiSigWalletJSON, [
         [alice.address, bob.address, charlie.address, charlie.address],
@@ -64,7 +63,7 @@ describe("Testing Multi Sig Wallets", function () {
   });
 
   it("Testing submission of transaction", async function () {
-    const { multiSigWallet, msWallet, alice } = await loadFixture(fixture);
+    const { multiSigWallet, alice } = await loadFixture(fixture);
     const [_to] = await ethers.getSigners();
     const _mockData = "0x61626364";
     await expect(
@@ -72,5 +71,27 @@ describe("Testing Multi Sig Wallets", function () {
     )
       .to.emit(multiSigWallet, "SubmitTransaction")
       .withArgs(alice.address, 0, _to.address, 1, _mockData);
+  });
+
+  it("Testing confirmation of transaction", async function () {
+    const { multiSigWallet, alice, bob, charlie, dana } = await loadFixture(
+      fixture
+    );
+    const [_to] = await ethers.getSigners();
+    const _mockData = "0x61626364";
+    await multiSigWallet
+      .connect(alice)
+      .submitTransaction(_to.address, 1, _mockData);
+
+    // 2 owners give 2 confirmations
+    await multiSigWallet.connect(bob).confirmTransaction(0);
+    await multiSigWallet.connect(charlie).confirmTransaction(0);
+    const { numConfirmations } = await multiSigWallet.transactions(0);
+    expect(numConfirmations).to.equal(2);
+
+    // Emits ConfirmTransaction
+    expect(await multiSigWallet.connect(dana).confirmTransaction(0))
+      .to.emit(multiSigWallet, "ConfirmTransaction")
+      .withArgs(dana.address, 0);
   });
 });
