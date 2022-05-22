@@ -16,7 +16,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // <-- name of the deployment
     contract: "MultiSigWallet", // <-- name of the contract/artifact(more specifically) to deploy
     from: deployer, // <-- account to deploy from
-    args: [[alice, bob, charlie, dana, erika, fawn], 4], // <-- contract constructor arguments. Here it has nothing
+    args: [[alice, bob, charlie, dana, erika, fawn], 4], // <-- contract constructor arguments. Here it has 6 addresses (owners) and the number of confirmations required
     log: true, // <-- log the address and gas used in the console
   });
 };
