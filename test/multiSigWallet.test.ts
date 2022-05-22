@@ -94,4 +94,41 @@ describe("Testing Multi Sig Wallets", function () {
       .to.emit(multiSigWallet, "ConfirmTransaction")
       .withArgs(dana.address, 0);
   });
+
+  it("Testing getTransactionCount, getOwners", async function () {
+    const { multiSigWallet, alice, bob, charlie, dana, erika, fawn } =
+      await loadFixture(fixture);
+    const [_to] = await ethers.getSigners();
+    const _mockData = "0x61626364";
+    await multiSigWallet
+      .connect(alice)
+      .submitTransaction(_to.address, 1, _mockData);
+
+    // 2 owners give 2 confirmations
+    await multiSigWallet.connect(bob).confirmTransaction(0);
+    const options = { gasLimit: ethers.utils.parseEther("0.000000000001") };
+    await multiSigWallet.connect(dana).confirmTransaction(0);
+    const { numConfirmations } = await multiSigWallet.transactions(0);
+    expect(await multiSigWallet.getTransactionCount()).to.equal("1");
+    const owners = await multiSigWallet.getOwners();
+    expect(owners).to.have.members([
+      alice.address,
+      bob.address,
+      charlie.address,
+      dana.address,
+      erika.address,
+      fawn.address,
+    ]);
+    // expect(
+    //   await multiSigWallet.connect(dana).revokeConfirmation(1, options)
+    // ).to.be.revertedWith("Tx doesnt exist");
+
+    // Emit RevokeConfirmation and check number of confirmations
+    // expect(
+    //   await multiSigWallet.connect(dana).revokeConfirmation(0, options)
+    // ).to.emit(multiSigWallet, "RevokeConfirmation");
+    //   .withArgs(dana.address, 0);
+    // const { numConfirmations } = await multiSigWallet.transactions(0);
+    // expect(numConfirmations).to.equal(1);
+  });
 });
